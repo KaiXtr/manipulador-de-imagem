@@ -24,33 +24,44 @@ def informarValor(s,l):
     
     return v
 
-# A função abaixo serve para pintar as células da tabela (não está funcionando por hora)
-def estilo(d):
-    v = []
-    txt = ""
-    for x in d[1:-2]:
-        if x == ' ':
-            v.append(txt)
-            txt = ""
-        else:
-            txt += x
+# Esta função converte valores RGB para valores CMYK
+def to_cmyk(v):
+    r,g,b = v[0],v[1],v[2]
 
-    condicao = d
-    st = f'background-color: red'
-    return [st if d else st for d in condicao]
+    if (r,g,b) == (0,0,0):
+        return 0,0,0,100
+
+    c = 1 - r / 255
+    m = 1 - g / 255
+    y = 1 - b / 255
+
+    min_cmy = min(c, m, y)
+    c = round(((c - min_cmy) / (1 - min_cmy)) * 100,1)
+    m = round(((m - min_cmy) / (1 - min_cmy)) * 100,1)
+    y = round(((y - min_cmy) / (1 - min_cmy)) * 100,1)
+    k = round((min_cmy) * 100,1)
+
+    return [c,m,y,k]
+
+# Esta função converte valores RGB em escala de cinza
+def to_grayscale(v):
+    r,g,b = v[0],v[1],v[2]
+
+    l = (r * 0.2989) + (g * 0.5870) + (b * 0.1140)
+
+    return [l,l,l]
 
 def main():
-
     # encontra um arquivo de imagem
-    imgNome = "imagem.png"
+    imgNome = "balao.jpg"
     caminho = os.path.dirname(os.path.abspath(__file__))
     img = Image.open(caminho + '/' + imgNome).convert('RGB')
 
     # gerando dataframe da imagem a partir de suas dimensões
     w, h = img.size
     pixels = np.array(img.getdata())
-    xlist = [i for i in range(w)]
-    df = pd.DataFrame({j: xlist for j in range(h)},index=xlist,dtype=str)
+    xlist = [i for i in range(h)]
+    df = pd.DataFrame({j: xlist for j in range(w)},index=xlist,dtype=str)
 
     # obter pixel a ser alterado
     print(f'A imagem localizada em: "{caminho}/{imgNome}" possui dimensões {w}x{h}.')
@@ -70,9 +81,9 @@ def main():
 
     # procurando pixel informado pelo usuário
     p = 0
-    for x in range(w):
+    for y in range(h):
         row = []
-        for y in range(h):
+        for x in range(w):
             rgbPixel = [px for px in pixels[p]]
 
             # se o pixel for o informado pelo usuário, obter pixel padrão
@@ -86,9 +97,9 @@ def main():
 
     # obtendo informações RGB dos pixels e os inserindo ao dataframe
     p = 0
-    for x in range(w):
+    for y in range(h):
         row = []
-        for y in range(h):
+        for x in range(w):
             rgbPixel = [px for px in pixels[p]]
 
             # se pixel identificado é igual ao pixelPadrão, alterar
@@ -97,16 +108,44 @@ def main():
             else:
                 row.append(rgbPixel)
             p += 1
-        df.loc[x] = [str(r) for r in row]
+        df.loc[y] = [str(r) for r in row]
         novaArray.append([tuple(r) for r in row])
 
-    # aplicando estilo (que não funciona por hora) e salvando o dataframe em uma planilha
-    df.style.apply(estilo, subset=xlist)
-    df.to_excel('out/planilha1.xlsx',index=False)
+    # salvando o dataframe em uma planilha
+    planilhaNome = f"{imgNome.replace('.','_')}_rgb.xlsx"
+    print(f"Gerando {planilhaNome}...")
+    df.to_excel(f'out/{planilhaNome}',index=False)
+
+    # obtendo informações CMYK dos pixels e os inserindo ao dataframe
+    p = 0
+    for y in range(h):
+        row = []
+        for x in range(w):
+            rgbPixel = [px for px in pixels[p]]
+            row.append(rgbPixel)
+            p += 1
+        df.loc[y] = [str(to_cmyk(r)) for r in row]
+
+    # salvando o dataframe em uma planilha
+    planilhaNome = f"{imgNome.replace('.','_')}_cymk.xlsx"
+    print(f"Gerando {planilhaNome}...")
+    df.to_excel(f'out/{planilhaNome}',index=False)
 
     # salvando array de pixels como imagem
+    print(f"Salvando {imgNome}...")
     outImg = Image.fromarray(np.array(novaArray, dtype=np.uint8))
     outImg.save(f'out/{imgNome}')
+
+    # gerando imagem em escala de cinza
+    for y in range(len(novaArray)):
+        for x in range(len(novaArray[y])):
+            novaArray[y][x] = tuple(to_grayscale(novaArray[y][x]))
+
+    # salvando array de pixels como imagem cinza
+    grayscaleNome = f"greyscale_{imgNome}"
+    print(f"Salvando {grayscaleNome}...")
+    outImg = Image.fromarray(np.array(novaArray, dtype=np.uint8))
+    outImg.save(f'out/{grayscaleNome}')
 
 if __name__ == "__main__":
     main()
