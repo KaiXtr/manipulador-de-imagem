@@ -95,6 +95,17 @@ def contraste(v,b):
 
     return v
 
+# Esta função adiciona borrão
+def blur(v,b):
+    for vv in range(len(v)):
+        if b >= 0: v[vv] *= b
+        else: v[vv] = int(v[vv]/(-1 * b))
+
+        if (v[vv] > 255): v[vv] = 255
+        if (v[vv] < 0): v[vv] = 0
+
+    return v
+
 def alterarImg(imgPath,pArray,func,valor):
     novaArray = np.array(pArray).view()
 
@@ -108,20 +119,19 @@ def alterarImg(imgPath,pArray,func,valor):
     # salvando array de pixels como uma imagem nova
     print(f"Salvando {imgPath}...")
     outImg = Image.fromarray(np.array(novaArray, dtype=np.uint8))
-    outImg.save(f'out/{imgPath}')
+    outImg.save(imgPath)
 
 def salvarImg(imgPath,pArray):
     alterarImg(imgPath,pArray,None,None)
 
 def salvarPlanilha(arqPath,dataFrame):
     print(f"Gerando {arqPath}...")
-    dataFrame.to_excel(f'out/{arqPath}',index=False)
+    dataFrame.to_excel(arqPath,index=False)
 
 def carregarImg(imgNome,prompt=False):
     # encontra um arquivo de imagem
     folderNome = imgNome.replace('.','_')
-    caminho = os.path.dirname(os.path.abspath(__file__))
-    img = Image.open(caminho + '/' + imgNome).convert('RGB')
+    img = Image.open(imgNome).convert('RGB')
 
     # gerando dataframe da imagem a partir de suas dimensões
     w, h = img.size
@@ -130,7 +140,7 @@ def carregarImg(imgNome,prompt=False):
     df = pd.DataFrame({j: xlist for j in range(w)},index=xlist,dtype=str)
 
     # obter pixel a ser alterado
-    print(f'A imagem localizada em: "{caminho}/{imgNome}" possui dimensões {w}x{h}.')
+    print(f'A imagem localizada em: "{imgNome}" possui dimensões {w}x{h}.')
     inputX = informarValor("a posição X do pixel",w - 1) if prompt else 0
     inputY = informarValor("a posição Y do pixel",h - 1) if prompt else 0
 
@@ -174,14 +184,14 @@ def carregarImg(imgNome,prompt=False):
             else:
                 row.append(rgbPixel)
             p += 1
-        df.loc[y] = [str(r) for r in row]
+        #df.loc[y] = [str(r) for r in row]
         novaArray.append([tuple(r) for r in row])
 
     # salvando o dataframe em uma planilha
-    salvarPlanilha(f"{folderNome}/{imgNome}_rgb.xlsx",df)
+    #salvarPlanilha(f"{imgNome}_rgb.xlsx",df)
 
     # obtendo informações CMYK dos pixels e os inserindo ao dataframe
-    p = 0
+    '''p = 0
     for y in range(h):
         row = []
         for x in range(w):
@@ -194,7 +204,7 @@ def carregarImg(imgNome,prompt=False):
                 row.append(rgbPixel)
             p += 1
         df.loc[y] = [str(to_cmyk(r)) for r in row]
-    salvarPlanilha(f"{folderNome}/{imgNome}_cymk.xlsx",df)
+    salvarPlanilha(f"{imgNome}_cymk.xlsx",df)'''
     
     return novaArray
 
