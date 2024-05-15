@@ -95,10 +95,31 @@ def contraste(v,b):
 
     return v
 
-def main():
+def alterarImg(imgPath,pArray,func,valor):
+    novaArray = np.array(pArray).view()
+
+    # fazendo alteração nos pixels da imagem
+    if (func != None):
+        for y in range(len(novaArray)):
+            for x in range(len(novaArray[y])):
+                vv = func(novaArray[y][x],valor)
+                novaArray[y][x] = tuple(vv)
+
+    # salvando array de pixels como uma imagem nova
+    print(f"Salvando {imgPath}...")
+    outImg = Image.fromarray(np.array(novaArray, dtype=np.uint8))
+    outImg.save(f'out/{imgPath}')
+
+def salvarImg(imgPath,pArray):
+    alterarImg(imgPath,pArray,None,None)
+
+def salvarPlanilha(arqPath,dataFrame):
+    print(f"Gerando {arqPath}...")
+    dataFrame.to_excel(f'out/{arqPath}',index=False)
+
+def carregarImg(imgNome,prompt=False):
     # encontra um arquivo de imagem
-    imgNome = "imagem.png"
-    imgNome = "balao.jpg"
+    folderNome = imgNome.replace('.','_')
     caminho = os.path.dirname(os.path.abspath(__file__))
     img = Image.open(caminho + '/' + imgNome).convert('RGB')
 
@@ -110,11 +131,11 @@ def main():
 
     # obter pixel a ser alterado
     print(f'A imagem localizada em: "{caminho}/{imgNome}" possui dimensões {w}x{h}.')
-    inputX = informarValor("a posição X do pixel",w - 1)
-    inputY = informarValor("a posição Y do pixel",h - 1)
+    inputX = informarValor("a posição X do pixel",w - 1) if prompt else 0
+    inputY = informarValor("a posição Y do pixel",h - 1) if prompt else 0
 
     pixelNovo = [255,0,0]
-    inputAsk = input(f'Gostaria de informar a cor a ser substituída? (y/N): ')
+    inputAsk = input(f'Gostaria de informar a cor a ser substituída? (y/N): ') if prompt else 'N'
     if inputAsk.lower() == "y":
         inputR = informarValor("o valor R da cor",255)
         inputG = informarValor("o valor G da cor",255)
@@ -156,14 +177,8 @@ def main():
         df.loc[y] = [str(r) for r in row]
         novaArray.append([tuple(r) for r in row])
 
-    # criando pasta
-    folderNome = imgNome.replace('.','_')
-    os.makedirs(f"./out/{folderNome}",exist_ok=True)
-
     # salvando o dataframe em uma planilha
-    planilhaNome = f"{imgNome.replace('.','_')}_rgb.xlsx"
-    print(f"Gerando {planilhaNome}...")
-    df.to_excel(f'out/{folderNome}/{planilhaNome}',index=False)
+    salvarPlanilha(f"{folderNome}/{imgNome}_rgb.xlsx",df)
 
     # obtendo informações CMYK dos pixels e os inserindo ao dataframe
     p = 0
@@ -179,86 +194,42 @@ def main():
                 row.append(rgbPixel)
             p += 1
         df.loc[y] = [str(to_cmyk(r)) for r in row]
+    salvarPlanilha(f"{folderNome}/{imgNome}_cymk.xlsx",df)
+    
+    return novaArray
 
-    # salvando o dataframe em uma planilha
-    planilhaNome = f"{imgNome.replace('.','_')}_cymk.xlsx"
-    print(f"Gerando {planilhaNome}...")
-    df.to_excel(f'out/{folderNome}/{planilhaNome}',index=False)
+def main():
+    imgNome = "imagem.png"
+    #imgNome = "balao.jpg"
+
+    # criando pasta
+    folderNome = imgNome.replace('.','_')
+    os.makedirs(f"./out/{folderNome}",exist_ok=True)
+
+    # carregando imagem e pixels
+    novaArray = carregarImg(imgNome)
 
     # salvando array de pixels como imagem
-    print(f"Salvando {imgNome}...")
-    outImg = Image.fromarray(np.array(novaArray, dtype=np.uint8))
-    outImg.save(f'out/{folderNome}/{imgNome}')
+    salvarImg(f"{folderNome}/{imgNome}",novaArray)
 
     # gerando 5 tipos de imagens em escala de cinza
     for t in range(5):
-        grayscaleArray = np.array(novaArray).view()
+        alterarImg(f"{folderNome}/grayscale_{t + 1}_{imgNome}",novaArray,to_grayscale,t)
 
-        # gerando imagem em escala de cinza
-        for y in range(len(grayscaleArray)):
-            for x in range(len(grayscaleArray[y])):
-                vv = to_grayscale(grayscaleArray[y][x],t)
-                grayscaleArray[y][x] = tuple(vv)
-
-        # salvando array de pixels como imagem cinza
-        grayscaleNome = f"greyscale_{t + 1}_{imgNome}"
-        print(f"Salvando {grayscaleNome}...")
-        outImg = Image.fromarray(np.array(grayscaleArray, dtype=np.uint8))
-        outImg.save(f'out/{folderNome}/{grayscaleNome}')
-
-    # gerando 3 tipos de imagens de brilhos
+    # gerando 3 tipos de imagens de brilhos e 3 tipos de imagens de contraste
     for t in range(3):
-        brilhoArray = np.array(novaArray).view()
-
-        # gerando imagem em escala de cinza
-        for y in range(len(brilhoArray)):
-            for x in range(len(brilhoArray[y])):
-                if t == 0: vv = brilho_soma(brilhoArray[y][x],-128)
-                if t == 1: vv = brilho_soma(brilhoArray[y][x],128)
-                if t == 2: vv = brilho_soma(brilhoArray[y][x],200)
-                brilhoArray[y][x] = tuple(vv)
-
-        # salvando array de pixels como imagem cinza
-        brilhoNome = f"brilho_soma_{t + 1}_{imgNome}"
-        print(f"Salvando {brilhoNome}...")
-        outImg = Image.fromarray(np.array(brilhoArray, dtype=np.uint8))
-        outImg.save(f'out/{folderNome}/{brilhoNome}')
-    
-    # gerando 3 tipos de imagens de brilhos
-    for t in range(3):
-        brilhoArray = np.array(novaArray).view()
-
-        # gerando imagem em escala de cinza
-        for y in range(len(brilhoArray)):
-            for x in range(len(brilhoArray[y])):
-                if t == 0: vv = brilho_fator(brilhoArray[y][x],-2)
-                if t == 1: vv = brilho_fator(brilhoArray[y][x],2)
-                if t == 2: vv = brilho_fator(brilhoArray[y][x],3)
-                brilhoArray[y][x] = tuple(vv)
-
-        # salvando array de pixels como imagem cinza
-        brilhoNome = f"brilho_fator_{t + 1}_{imgNome}"
-        print(f"Salvando {brilhoNome}...")
-        outImg = Image.fromarray(np.array(brilhoArray, dtype=np.uint8))
-        outImg.save(f'out/{folderNome}/{brilhoNome}')
-    
-    # gerando 3 tipos de imagens de contrates
-    for t in range(3):
-        contrasteArray = np.array(novaArray).view()
-
-        # gerando imagem em escala de cinza
-        for y in range(len(contrasteArray)):
-            for x in range(len(contrasteArray[y])):
-                if t == 0: vv = contraste(contrasteArray[y][x],-100)
-                if t == 1: vv = contraste(contrasteArray[y][x],100)
-                if t == 2: vv = contraste(contrasteArray[y][x],200)
-                contrasteArray[y][x] = tuple(vv)
-
-        # salvando array de pixels como imagem cinza
-        contrasteNome = f"contraste_{t + 1}_{imgNome}"
-        print(f"Salvando {contrasteNome}...")
-        outImg = Image.fromarray(np.array(contrasteArray, dtype=np.uint8))
-        outImg.save(f'out/{folderNome}/{contrasteNome}')
+        if t == 0:
+            alterarImg(f"{folderNome}/brilho_soma_{t + 1}_{imgNome}",novaArray,brilho_soma,-128)
+            alterarImg(f"{folderNome}/brilho_fator_{t + 1}_{imgNome}",novaArray,brilho_fator,-2)
+            alterarImg(f"{folderNome}/contraste_{t + 1}_{imgNome}",novaArray,contraste,-100)
+        if t == 1:
+            alterarImg(f"{folderNome}/brilho_soma_{t + 1}_{imgNome}",novaArray,brilho_soma,128)
+            alterarImg(f"{folderNome}/brilho_fator_{t + 1}_{imgNome}",novaArray,brilho_fator,2)
+            alterarImg(f"{folderNome}/contraste_{t + 1}_{imgNome}",novaArray,contraste,100)
+        if t == 2:
+            alterarImg(f"{folderNome}/brilho_soma_{t + 1}_{imgNome}",novaArray,brilho_soma,200)
+            alterarImg(f"{folderNome}/brilho_fator_{t + 1}_{imgNome}",novaArray,brilho_fator,3)
+            alterarImg(f"{folderNome}/contraste_{t + 1}_{imgNome}",novaArray,contraste,200)
 
 if __name__ == "__main__":
     main()
