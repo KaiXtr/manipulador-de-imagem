@@ -95,34 +95,104 @@ def contraste(v,b):
 
     return v
 
+# Esta função separa os canais RGB
+def to_channel(v,b):
+    n = [0,0,0]
+
+    if b[0]: n[0] = v[0]
+    if b[1]: n[1] = v[1]
+    if b[2]: n[2] = v[2]
+
+    return n
+
 # Esta função adiciona borrão
-def blur(v,b):
-    for vv in range(len(v)):
-        if b >= 0: v[vv] *= b
-        else: v[vv] = int(v[vv]/(-1 * b))
+def blur(v,x,y,b):
+    nPixels = 0
 
-        if (v[vv] > 255): v[vv] = 255
-        if (v[vv] < 0): v[vv] = 0
+    n = [0,0,0]
+    for yy in range(-b, b + 1):
+        if (y + yy < 0): continue
+        if (y + yy > len(v) - 1): continue
 
-    return v
+        for xx in range(-b, b + 1):
+            if (x + xx < 0): continue
+            if (x + xx > len(v[y + yy]) - 1): continue
 
-def alterarImg(imgPath,pArray,func,valor):
+            n[0] += v[y + yy][x + xx][0]
+            n[1] += v[y + yy][x + xx][1]
+            n[2] += v[y + yy][x + xx][2]
+            nPixels += 1
+    
+    return [int(n[0]/nPixels),int(n[1]/nPixels),int(n[2]/nPixels)]
+
+# Esta função aplica o filtro de detecção de borda
+def sobel(v,x,y,b):
+    n = list(v[y][x])
+    for yy in range(-1, 2):
+        if (y + yy < 0): continue
+        if (y + yy > len(v) - 1): continue
+
+        for xx in range(-1, 2):
+            if (x + xx < 0): continue
+            if (x + xx > len(v[y + yy]) - 1): continue
+
+            if yy == -1:
+                if xx == -1:
+                    n[0] += (v[y + yy][x + xx][0] * -1) + (v[y + yy][x + xx][0] * 1)
+                    n[1] += (v[y + yy][x + xx][1] * -1) + (v[y + yy][x + xx][0] * 1)
+                    n[2] += (v[y + yy][x + xx][2] * -1) + (v[y + yy][x + xx][0] * 1)
+                if xx == 0:
+                    n[0] += (v[y + yy][x + xx][0] * 2)
+                    n[1] += (v[y + yy][x + xx][0] * 2)
+                    n[2] += (v[y + yy][x + xx][0] * 2)
+                if xx == 1:
+                    n[0] += (v[y + yy][x + xx][0] * 1) + (v[y + yy][x + xx][0] * 1)
+                    n[1] += (v[y + yy][x + xx][1] * 1) + (v[y + yy][x + xx][0] * 1)
+                    n[2] += (v[y + yy][x + xx][2] * 1) + (v[y + yy][x + xx][0] * 1)
+            if yy == 0:
+                if xx == -1:
+                    n[0] += (v[y + yy][x + xx][0] * -2)
+                    n[1] += (v[y + yy][x + xx][1] * -2)
+                    n[2] += (v[y + yy][x + xx][2] * -2)
+                if xx == 1:
+                    n[0] += (v[y + yy][x + xx][0] * 2)
+                    n[1] += (v[y + yy][x + xx][1] * 2)
+                    n[2] += (v[y + yy][x + xx][2] * 2)
+            if yy == 1:
+                if xx == -1:
+                    n[0] += (v[y + yy][x + xx][0] * -1) + (v[y + yy][x + xx][0] * -1)
+                    n[1] += (v[y + yy][x + xx][1] * -1) + (v[y + yy][x + xx][0] * -1)
+                    n[2] += (v[y + yy][x + xx][2] * -1) + (v[y + yy][x + xx][0] * -1)
+                if xx == 0:
+                    n[0] += (v[y + yy][x + xx][0] * -2)
+                    n[1] += (v[y + yy][x + xx][0] * -2)
+                    n[2] += (v[y + yy][x + xx][0] * -2)
+                if xx == 1:
+                    n[0] += (v[y + yy][x + xx][0] * 1) + (v[y + yy][x + xx][0] * -1)
+                    n[1] += (v[y + yy][x + xx][1] * 1) + (v[y + yy][x + xx][0] * -1)
+                    n[2] += (v[y + yy][x + xx][2] * 1) + (v[y + yy][x + xx][0] * -1)
+    
+    return n
+
+def alterarImg(pArray,func,valor):
     novaArray = np.array(pArray).view()
 
     # fazendo alteração nos pixels da imagem
     if (func != None):
-        for y in range(len(novaArray)):
-            for x in range(len(novaArray[y])):
-                vv = func(novaArray[y][x],valor)
+        for y in range(len(pArray)):
+            for x in range(len(pArray[y])):
+                if func.__name__ in ('blur','sobel'):
+                    vv = func(list(pArray),x,y,valor)
+                else:
+                    vv = func(list(pArray[y][x]),valor)
                 novaArray[y][x] = tuple(vv)
-
-    # salvando array de pixels como uma imagem nova
-    print(f"Salvando {imgPath}...")
-    outImg = Image.fromarray(np.array(novaArray, dtype=np.uint8))
-    outImg.save(imgPath)
+    
+    return novaArray
 
 def salvarImg(imgPath,pArray):
-    alterarImg(imgPath,pArray,None,None)
+    print(f"Salvando {imgPath}...")
+    outImg = Image.fromarray(np.array(pArray, dtype=np.uint8))
+    outImg.save(imgPath)
 
 def salvarPlanilha(arqPath,dataFrame):
     print(f"Gerando {arqPath}...")
@@ -220,7 +290,7 @@ def main():
     novaArray = carregarImg(imgNome)
 
     # salvando array de pixels como imagem
-    salvarImg(f"{folderNome}/{imgNome}",novaArray)
+    alterarImg(f"{folderNome}/{imgNome}",novaArray,None,None)
 
     # gerando 5 tipos de imagens em escala de cinza
     for t in range(5):
