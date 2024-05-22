@@ -62,6 +62,13 @@ def to_grayscale(v,tp):
 
     return [l,l,l]
 
+# Esta função inverte as cores da imagem
+def inverter(v,b):
+    for vv in range(len(v)):
+        v[vv] = 255 - v[vv]
+
+    return v
+
 # Esta função altera o brilho da imagem ao somar valores absolutos
 def brilho_soma(v,b):
     for vv in range(len(v)):
@@ -174,7 +181,7 @@ def sobel(v,x,y,b):
     
     return n
 
-def alterarImg(pArray,func,valor):
+def alterarImg(pArray,func,valor,svImg=None):
     novaArray = np.array(pArray).view()
 
     # fazendo alteração nos pixels da imagem
@@ -186,6 +193,9 @@ def alterarImg(pArray,func,valor):
                 else:
                     vv = func(list(pArray[y][x]),valor)
                 novaArray[y][x] = tuple(vv)
+    
+    if (svImg != None):
+        salvarImg(svImg,novaArray)
     
     return novaArray
 
@@ -280,36 +290,44 @@ def carregarImg(imgNome,prompt=False):
 
 def main():
     imgNome = "imagem.png"
-    #imgNome = "balao.jpg"
+    imgNome = "balao.jpg"
 
     # criando pasta
-    folderNome = imgNome.replace('.','_')
-    os.makedirs(f"./out/{folderNome}",exist_ok=True)
+    folderNome = f"./out/{imgNome.replace('.','_')}"
+    os.makedirs(folderNome,exist_ok=True)
 
     # carregando imagem e pixels
     novaArray = carregarImg(imgNome)
 
     # salvando array de pixels como imagem
-    alterarImg(f"{folderNome}/{imgNome}",novaArray,None,None)
+    alterarImg(novaArray,None,None,f"{folderNome}/{imgNome}")
 
     # gerando 5 tipos de imagens em escala de cinza
     for t in range(5):
-        alterarImg(f"{folderNome}/grayscale_{t + 1}_{imgNome}",novaArray,to_grayscale,t)
+        alterarImg(novaArray,to_grayscale,t,f"{folderNome}/grayscale_{t + 1}_{imgNome}")
 
     # gerando 3 tipos de imagens de brilhos e 3 tipos de imagens de contraste
     for t in range(3):
         if t == 0:
-            alterarImg(f"{folderNome}/brilho_soma_{t + 1}_{imgNome}",novaArray,brilho_soma,-128)
-            alterarImg(f"{folderNome}/brilho_fator_{t + 1}_{imgNome}",novaArray,brilho_fator,-2)
-            alterarImg(f"{folderNome}/contraste_{t + 1}_{imgNome}",novaArray,contraste,-100)
+            alterarImg(novaArray,inverter,1,f"{folderNome}/inverter_{imgNome}")
+            alterarImg(novaArray,brilho_soma,-128,f"{folderNome}/brilho_soma_{t + 1}_{imgNome}")
+            alterarImg(novaArray,brilho_fator,-2,f"{folderNome}/brilho_fator_{t + 1}_{imgNome}")
+            alterarImg(novaArray,contraste,-100,f"{folderNome}/contraste_{t + 1}_{imgNome}")
+            alterarImg(novaArray,blur,1,f"{folderNome}/borrar_{t + 1}_{imgNome}")
+            alterarImg(novaArray,sobel,1,f"{folderNome}/sobel_{imgNome}")
+            alterarImg(novaArray,to_channel,[1,1,0],f"{folderNome}/rgb_{t + 1}_{imgNome}")
         if t == 1:
-            alterarImg(f"{folderNome}/brilho_soma_{t + 1}_{imgNome}",novaArray,brilho_soma,128)
-            alterarImg(f"{folderNome}/brilho_fator_{t + 1}_{imgNome}",novaArray,brilho_fator,2)
-            alterarImg(f"{folderNome}/contraste_{t + 1}_{imgNome}",novaArray,contraste,100)
+            alterarImg(novaArray,brilho_soma,128,f"{folderNome}/brilho_soma_{t + 1}_{imgNome}")
+            alterarImg(novaArray,brilho_fator,2,f"{folderNome}/brilho_fator_{t + 1}_{imgNome}")
+            alterarImg(novaArray,contraste,100,f"{folderNome}/contraste_{t + 1}_{imgNome}")
+            alterarImg(novaArray,blur,3,f"{folderNome}/borrar_{t + 1}_{imgNome}")
+            alterarImg(novaArray,to_channel,[0,1,0],f"{folderNome}/rgb_{t + 1}_{imgNome}")
         if t == 2:
-            alterarImg(f"{folderNome}/brilho_soma_{t + 1}_{imgNome}",novaArray,brilho_soma,200)
-            alterarImg(f"{folderNome}/brilho_fator_{t + 1}_{imgNome}",novaArray,brilho_fator,3)
-            alterarImg(f"{folderNome}/contraste_{t + 1}_{imgNome}",novaArray,contraste,200)
+            alterarImg(novaArray,brilho_soma,200,f"{folderNome}/brilho_soma_{t + 1}_{imgNome}")
+            alterarImg(novaArray,brilho_fator,3,f"{folderNome}/brilho_fator_{t + 1}_{imgNome}")
+            alterarImg(novaArray,contraste,200,f"{folderNome}/contraste_{t + 1}_{imgNome}")
+            alterarImg(novaArray,blur,5,f"{folderNome}/borrar_{t + 1}_{imgNome}")
+            alterarImg(novaArray,to_channel,[0,1,1],f"{folderNome}/rgb_{t + 1}_{imgNome}")
 
 if __name__ == "__main__":
     main()

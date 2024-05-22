@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import *
 from PyQt6.QtCore import Qt
 import main
 import sys
@@ -71,22 +71,25 @@ class MainWindow(QMainWindow):
             self.pListValue[i] = 1
         else:
             self.pListValue[i] = 0
-        print(self.pListValue)
     
     def imageUpdate(self,func):
         imgFolder = os.path.dirname(self.imgNome)
         imgSave = f"{imgFolder}/NOVO_{os.path.basename(self.imgNome)}"
 
-        if len(self.pListValue) == 0:
-            self.pixelsArray = main.alterarImg(self.pixelsArray,func,self.paramValue)
-            main.salvarImg(imgSave,self.pixelsArray)
-        else:
-            self.pixelsArray = main.alterarImg(self.pixelsArray,func,self.pListValue)
-            main.salvarImg(imgSave,self.pixelsArray)
-        
+        imgChange = self.pixelsArray[self.imgInd]
         if (self.imgInd < len(self.img) - 1):
-            self.img = self.img[0:self.imgInd + 1]
-        self.imgInd += 1
+            self.img = self.img[0:self.imgInd - 1]
+            self.imgInd = len(self.img) - 1
+        else: 
+            self.imgInd += 1
+
+        if len(self.pListValue) == 0:
+            self.pixelsArray.append(main.alterarImg(imgChange,func,self.paramValue))
+            main.salvarImg(imgSave,self.pixelsArray[self.imgInd])
+        else:
+            self.pixelsArray.append(main.alterarImg(imgChange,func,self.pListValue))
+            main.salvarImg(imgSave,self.pixelsArray[self.imgInd])
+
         self.img.append(QPixmap(imgSave))
         self.changeZoom(self.imgZoom)
         self.dlg.close()
@@ -104,12 +107,12 @@ class MainWindow(QMainWindow):
         self.imgInd += 1
         self.img.append(QPixmap(self.imgNome))
         self.imgDisplay.setPixmap(self.img[self.imgInd])
-        self.pixelsArray = main.carregarImg(self.imgNome)
+        self.pixelsArray.append(main.carregarImg(self.imgNome))
     
     def salvarImagem(self):
         imgFolder = os.path.dirname(self.imgNome)
         imgSave = f"{imgFolder}/{os.path.basename(self.imgNome)}"
-        main.salvarImg(imgSave,self.pixelsArray)
+        main.salvarImg(imgSave,self.pixelsArray[self.imgInd])
 
     def imgHistorico(self,mov):
         if mov:
@@ -118,14 +121,36 @@ class MainWindow(QMainWindow):
         elif self.imgInd > 0:
             self.imgInd -= 1
         
+        imgFolder = os.path.dirname(self.imgNome)
+        imgSave = f"{imgFolder}/NOVO_{os.path.basename(self.imgNome)}"
+        main.salvarImg(imgSave,self.pixelsArray[self.imgInd])
         self.changeZoom(self.imgZoom)
 
     def changeZoom(self,v):
+        print(f"{self.imgInd} - {self.img}")
+
         self.imgZoom = v
         self.zmLabel.setText(f"{v}%")
         nWidth = round(self.img[self.imgInd].size().width() * (v/100))
         nHeight = round(self.img[self.imgInd].size().height() * (v/100))
         self.imgDisplay.setPixmap(self.img[self.imgInd].scaled(nWidth,nHeight))
+
+    def habilitar(self,t):
+        if (t == 'zoom'):
+            self.zmLabel.setHidden(not self.zmLabel.isHidden())
+            self.zmSlider.setHidden(not self.zmSlider.isHidden())
+
+    def sobre(self):
+        self.dlg = QDialog(self)
+        self.dlg.setWindowTitle("Sobre")
+
+        layout = QVBoxLayout()
+
+        self.lbl = QLabel("Manipulador de imagem v1.0\nPor Ewerton Bramos")
+        layout.addWidget(self.lbl)
+
+        self.dlg.setLayout(layout)
+        self.dlg.exec()
 
     def __init__(self):
         super().__init__()
@@ -137,40 +162,11 @@ class MainWindow(QMainWindow):
         self.imgZoom = 1
 
         # Imagem
+        self.pixelsArray = []
         self.img = []
         self.imgInd = -1
         self.imgDisplay = QLabel(self)
         self.abrirImagem('src/imagem.png')
-
-        # Botões de menu
-        mnBtns = []
-        mnBarra = QHBoxLayout()
-        btsTxts = ('Abrir','Salvar','Desfazer','Refazer')
-        for i in range(len(btsTxts)):
-            mnBtns.append(QPushButton(f"{btsTxts[i]}"))
-            mnBarra.addWidget(mnBtns[i])
-        
-        # Associando funções para cada botão de menu
-        mnBtns[0].pressed.connect(self.abrirImagem)
-        mnBtns[1].pressed.connect(self.salvarImagem)
-        mnBtns[2].pressed.connect(lambda: self.imgHistorico(False))
-        mnBtns[3].pressed.connect(lambda: self.imgHistorico(True))
-
-        # Botões de ferramentas
-        toolBtns = []
-        btsBarra = QHBoxLayout()
-        btsTxts = ('Brilho','Contraste','Cinza','Canais','Borrar','Borda')
-        for i in range(len(btsTxts)):
-            toolBtns.append(QPushButton(f"{btsTxts[i]}"))
-            btsBarra.addWidget(toolBtns[i])
-
-        # Associando funções para cada botão de ferramenta
-        toolBtns[0].pressed.connect(lambda: self.btnAction("Brilho...",main.brilho_soma,-255,255))
-        toolBtns[1].pressed.connect(lambda: self.btnAction("Contraste...",main.contraste,-255,255))
-        toolBtns[2].pressed.connect(lambda: self.btnAction("Cinza...",main.to_grayscale,1,5))
-        toolBtns[3].pressed.connect(lambda: self.btnAction("Canais...",main.to_channel,1,3,['R','G','B']))
-        toolBtns[4].pressed.connect(lambda: self.btnAction("Borrar...",main.blur,1,10))
-        toolBtns[5].pressed.connect(lambda: self.btnAction("Borda...",main.sobel,1,1))
 
         # Barra de zoom
         self.zmLabel = QLabel('1%')
@@ -184,9 +180,75 @@ class MainWindow(QMainWindow):
         zmBarra.addWidget(self.zmLabel)
         zmBarra.addWidget(self.zmSlider)
 
+        # Barra de ferramentas
+        mnBtns = []
+        sbBtns = []
+        mnTxts = (
+            (
+                'Arquivo',(
+                    ('Abrir','Abre uma nova imagem'),
+                    ('Salvar','Salva as alterações feitas à uma imagem'),
+                    ('Sair','Fecha o programa')
+                )
+            ),
+            (
+                'Editar',(
+                    ('Desfazer','Desfaz alterações'),
+                    ('Refazer','Refaz alterações')
+                )
+            ),
+            (
+                'Exibir',(
+                    ('Zoom','Habilitar ou desabilitar barra de zoom',True),
+                )
+            ),
+            (
+                'Sobre',(
+                    ('Sobre o manipulador de imagens...','Exibe informações sobre o programa'),
+                )
+            )
+            )
+        self.barraFerramentas = self.menuBar()
+        for i in range(len(mnTxts)):
+            mnBtns.append(self.barraFerramentas.addMenu(mnTxts[i][0]))
+            sbBtns.append([])
+            for j in range(len(mnTxts[i][1])):
+                sbBtns[i].append(QAction(mnTxts[i][1][j][0],self))
+                sbBtns[i][j].setStatusTip(mnTxts[i][1][j][1])
+                if (len(mnTxts[i][1][j]) > 2):
+                    sbBtns[i][j].setCheckable(True)
+                    sbBtns[i][j].setChecked(mnTxts[i][1][j][2])
+                mnBtns[i].addAction(sbBtns[i][j])
+                
+        # Associando funções para cada botão de menu
+        sbBtns[0][0].triggered.connect(self.abrirImagem)
+        sbBtns[0][1].triggered.connect(self.salvarImagem)
+        sbBtns[0][2].triggered.connect(quit)
+        sbBtns[1][0].triggered.connect(lambda: self.imgHistorico(False))
+        sbBtns[1][1].triggered.connect(lambda: self.imgHistorico(True))
+        sbBtns[2][0].triggered.connect(lambda: self.habilitar('zoom'))
+        sbBtns[3][0].triggered.connect(lambda: self.sobre())
+
+        # Botões de ferramentas
+        toolBtns = []
+        btsBarra = QHBoxLayout()
+        btsTxts = ('Inverter','Brilho','Contraste','Cinza','Canais','Borrar','Borda')
+        for i in range(len(btsTxts)):
+            toolBtns.append(QPushButton(f"{btsTxts[i]}"))
+            btsBarra.addWidget(toolBtns[i])
+
+        # Associando funções para cada botão de ferramenta
+        toolBtns[0].pressed.connect(lambda: self.btnAction("Inverter...",main.inverter,1,1))
+        toolBtns[1].pressed.connect(lambda: self.btnAction("Brilho...",main.brilho_soma,-255,255))
+        toolBtns[2].pressed.connect(lambda: self.btnAction("Contraste...",main.contraste,-255,255))
+        toolBtns[3].pressed.connect(lambda: self.btnAction("Cinza...",main.to_grayscale,1,5))
+        toolBtns[4].pressed.connect(lambda: self.btnAction("Canais...",main.to_channel,1,3,['R','G','B']))
+        toolBtns[5].pressed.connect(lambda: self.btnAction("Borrar...",main.blur,1,10))
+        toolBtns[6].pressed.connect(lambda: self.btnAction("Borda...",main.sobel,1,1))
+
         # Adicionar e posicionar elementos na tela
         layout = QVBoxLayout()
-        layout.addLayout(mnBarra)
+        #layout.addLayout(mnBarra)
         layout.addLayout(btsBarra)
         layout.addWidget(self.imgDisplay)
         layout.addLayout(zmBarra)
