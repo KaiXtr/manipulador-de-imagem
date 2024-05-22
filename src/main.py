@@ -183,6 +183,7 @@ def sobel(v,x,y,b):
 
 def alterarImg(pArray,func,valor,svImg=None):
     novaArray = np.array(pArray).view()
+    maxLd = len(pArray) * len(pArray[0])
 
     # fazendo alteração nos pixels da imagem
     if (func != None):
@@ -192,6 +193,9 @@ def alterarImg(pArray,func,valor,svImg=None):
                     vv = func(list(pArray),x,y,valor)
                 else:
                     vv = func(list(pArray[y][x]),valor)
+                
+                prg = 100 * ((x + (y * len(pArray)))/maxLd)
+                print(f"Aplicando alterações... ({int(prg) + 1}/100)")
                 novaArray[y][x] = tuple(vv)
     
     if (svImg != None):

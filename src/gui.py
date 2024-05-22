@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
         self.dlg.close()
 
     def abrirImagem(self,imgDefault=None):
-        if imgDefault == None:
+        if not imgDefault:
             f = QFileDialog()
             f.setNameFilter("Images (*.png *.jpg)")
             if f.exec():
@@ -103,6 +103,7 @@ class MainWindow(QMainWindow):
         else:
             self.imgNome = imgDefault
 
+        self.setWindowTitle(f"{os.path.basename(self.imgNome)} - Manipulador de Imagem")
         self.imgZoom = 100
         self.imgInd += 1
         self.img.append(QPixmap(self.imgNome))
@@ -228,6 +229,13 @@ class MainWindow(QMainWindow):
         sbBtns[1][1].triggered.connect(lambda: self.imgHistorico(True))
         sbBtns[2][0].triggered.connect(lambda: self.habilitar('zoom'))
         sbBtns[3][0].triggered.connect(lambda: self.sobre())
+
+        # Atalhos
+        QShortcut(QKeySequence("Ctrl+O"),self).activated.connect(self.abrirImagem)
+        QShortcut(QKeySequence("Ctrl+S"),self).activated.connect(self.salvarImagem)
+        QShortcut(QKeySequence("Ctrl+Q"),self).activated.connect(quit)
+        QShortcut(QKeySequence("Ctrl+Z"),self).activated.connect(lambda: self.imgHistorico(False))
+        QShortcut(QKeySequence("Ctrl+Y"),self).activated.connect(lambda: self.imgHistorico(True))
 
         # Botões de ferramentas
         toolBtns = []
