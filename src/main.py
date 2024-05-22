@@ -185,8 +185,28 @@ def alterarImg(pArray,func,valor,svImg=None):
     novaArray = np.array(pArray).view()
     maxLd = len(pArray) * len(pArray[0])
 
+    # fazendo alteração em espelhamento
+    if (func == 'espelharH'):
+        novaArray = []
+        for y in range(len(pArray)):
+            novaArray.append([])
+            for x in range(len(pArray[y])):
+                novaArray[y].insert(0,pArray[y][x])
+    elif (func == 'espelharV'):
+        novaArray = []
+        for y in range(len(pArray)):
+            novaArray.insert(0,[])
+            for x in range(len(pArray[y])):
+                novaArray[0].append(pArray[y][x])
+    elif (func == 'girar'):
+        novaArray = []
+        for y in range(len(pArray[0])):
+            novaArray.append([])
+            for x in range(len(pArray)):
+                novaArray[y].insert(0,pArray[x][y])
+
     # fazendo alteração nos pixels da imagem
-    if (func != None):
+    elif (func != None):
         for y in range(len(pArray)):
             for x in range(len(pArray[y])):
                 if func.__name__ in ('blur','sobel'):

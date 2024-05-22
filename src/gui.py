@@ -109,6 +109,7 @@ class MainWindow(QMainWindow):
         self.img.append(QPixmap(self.imgNome))
         self.imgDisplay.setPixmap(self.img[self.imgInd])
         self.pixelsArray.append(main.carregarImg(self.imgNome))
+        self.sttsDim.setText(f"{len(self.pixelsArray[self.imgInd])}x{len(self.pixelsArray[self.imgInd][0])}")
     
     def salvarImagem(self):
         imgFolder = os.path.dirname(self.imgNome)
@@ -161,6 +162,12 @@ class MainWindow(QMainWindow):
         self.paramValue = 0
         self.pListValue = []
         self.imgZoom = 1
+
+        # Barra de status
+        self.sttsBar = QStatusBar(self)
+        self.sttsDim = QLabel("0x0")
+        self.sttsBar.addWidget(self.sttsDim)
+        self.setStatusBar(self.sttsBar)
 
         # Imagem
         self.pixelsArray = []
@@ -240,19 +247,22 @@ class MainWindow(QMainWindow):
         # Botões de ferramentas
         toolBtns = []
         btsBarra = QHBoxLayout()
-        btsTxts = ('Inverter','Brilho','Contraste','Cinza','Canais','Borrar','Borda')
+        btsTxts = ('EspelharH','EspelharV','Girar','Inverter','Brilho','Contraste','Cinza','Canais','Borrar','Borda')
         for i in range(len(btsTxts)):
             toolBtns.append(QPushButton(f"{btsTxts[i]}"))
             btsBarra.addWidget(toolBtns[i])
 
         # Associando funções para cada botão de ferramenta
-        toolBtns[0].pressed.connect(lambda: self.btnAction("Inverter...",main.inverter,1,1))
-        toolBtns[1].pressed.connect(lambda: self.btnAction("Brilho...",main.brilho_soma,-255,255))
-        toolBtns[2].pressed.connect(lambda: self.btnAction("Contraste...",main.contraste,-255,255))
-        toolBtns[3].pressed.connect(lambda: self.btnAction("Cinza...",main.to_grayscale,1,5))
-        toolBtns[4].pressed.connect(lambda: self.btnAction("Canais...",main.to_channel,1,3,['R','G','B']))
-        toolBtns[5].pressed.connect(lambda: self.btnAction("Borrar...",main.blur,1,10))
-        toolBtns[6].pressed.connect(lambda: self.btnAction("Borda...",main.sobel,1,1))
+        toolBtns[0].pressed.connect(lambda: self.btnAction("Espelhar horizontalmente...",'espelharH',1,1))
+        toolBtns[1].pressed.connect(lambda: self.btnAction("Espelhar verticalmente...",'espelharV',1,1))
+        toolBtns[2].pressed.connect(lambda: self.btnAction("Girar...",'girar',1,1))
+        toolBtns[3].pressed.connect(lambda: self.btnAction("Inverter...",main.inverter,1,1))
+        toolBtns[4].pressed.connect(lambda: self.btnAction("Brilho...",main.brilho_soma,-255,255))
+        toolBtns[5].pressed.connect(lambda: self.btnAction("Contraste...",main.contraste,-255,255))
+        toolBtns[6].pressed.connect(lambda: self.btnAction("Cinza...",main.to_grayscale,1,5))
+        toolBtns[7].pressed.connect(lambda: self.btnAction("Canais...",main.to_channel,1,3,['R','G','B']))
+        toolBtns[8].pressed.connect(lambda: self.btnAction("Borrar...",main.blur,1,10))
+        toolBtns[9].pressed.connect(lambda: self.btnAction("Borda...",main.sobel,1,1))
 
         # Adicionar e posicionar elementos na tela
         layout = QVBoxLayout()
