@@ -174,7 +174,14 @@ class MainWindow(QMainWindow):
         self.img = []
         self.imgInd = -1
         self.imgDisplay = QLabel(self)
-        self.abrirImagem('src/imagem.png')
+
+        try:
+            self.abrirImagem(f"{os.path.dirname(__file__)}/imagem.png")
+        except Exception:
+            print(f"Não foi possível abrir a imagem padrão: {Exception}")
+            self.pixelsArray = []
+            self.img = []
+            self.imgInd = -1
 
         # Barra de zoom
         self.zmLabel = QLabel('1%')
@@ -231,7 +238,7 @@ class MainWindow(QMainWindow):
         # Associando funções para cada botão de menu
         sbBtns[0][0].triggered.connect(self.abrirImagem)
         sbBtns[0][1].triggered.connect(self.salvarImagem)
-        sbBtns[0][2].triggered.connect(quit)
+        sbBtns[0][2].triggered.connect(sys.exit)
         sbBtns[1][0].triggered.connect(lambda: self.imgHistorico(False))
         sbBtns[1][1].triggered.connect(lambda: self.imgHistorico(True))
         sbBtns[2][0].triggered.connect(lambda: self.habilitar('zoom'))
@@ -240,7 +247,7 @@ class MainWindow(QMainWindow):
         # Atalhos
         QShortcut(QKeySequence("Ctrl+O"),self).activated.connect(self.abrirImagem)
         QShortcut(QKeySequence("Ctrl+S"),self).activated.connect(self.salvarImagem)
-        QShortcut(QKeySequence("Ctrl+Q"),self).activated.connect(quit)
+        QShortcut(QKeySequence("Ctrl+Q"),self).activated.connect(sys.exit)
         QShortcut(QKeySequence("Ctrl+Z"),self).activated.connect(lambda: self.imgHistorico(False))
         QShortcut(QKeySequence("Ctrl+Y"),self).activated.connect(lambda: self.imgHistorico(True))
 
@@ -274,7 +281,9 @@ class MainWindow(QMainWindow):
         mainWidget = QWidget()
         mainWidget.setLayout(layout)
         self.setCentralWidget(mainWidget)
-        self.resize(self.img[self.imgInd].width(), self.img[self.imgInd].height())
+
+        if self.imgInd >= 0:
+            self.resize(self.img[self.imgInd].width(), self.img[self.imgInd].height())
         self.show()
 
 if __name__ == '__main__':
