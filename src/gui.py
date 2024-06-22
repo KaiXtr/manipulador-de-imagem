@@ -131,11 +131,12 @@ class MainWindow(QMainWindow):
     def changeZoom(self,v):
         print(f"{self.imgInd} - {self.img}")
 
-        self.imgZoom = v
-        self.zmLabel.setText(f"{v}%")
-        nWidth = round(self.img[self.imgInd].size().width() * (v/100))
-        nHeight = round(self.img[self.imgInd].size().height() * (v/100))
-        self.imgDisplay.setPixmap(self.img[self.imgInd].scaled(nWidth,nHeight))
+        if (self.imgInd >= 0):
+            self.imgZoom = v
+            self.zmLabel.setText(f"{v}%")
+            nWidth = round(self.img[self.imgInd].size().width() * (v/100))
+            nHeight = round(self.img[self.imgInd].size().height() * (v/100))
+            self.imgDisplay.setPixmap(self.img[self.imgInd].scaled(nWidth,nHeight))
 
     def habilitar(self,t):
         if (t == 'zoom'):
