@@ -1,1 +1,1 @@
-pyinstaller --onefile --name "Manipulador de Imagem" src/gui.py
+pyinstaller --clean --onefile --windowed --name "Manipulador de Imagem" src/gui.py
